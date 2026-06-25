@@ -4,6 +4,23 @@ Everything left to build, fix, or wire up. Roughly priority order within each se
 
 ---
 
+## 🔒 Go-live security hardening (DO BEFORE PUTTING REAL FUNDS ON THE SERVER)
+
+Currently shadow mode only — no wallet keys, no crypto anywhere, nothing to steal yet.
+These MUST be done before flipping `SHADOW_MODE=false` with a funded wallet:
+
+- [ ] **Dedicated hot wallet only** — fund a brand-new wallet with ONLY what you're willing to trade/lose. NEVER put your main wallet's private key on the server.
+- [ ] **Firewall: SSH only** — only port 22 open. Dashboard (8787) stays bound to localhost; reach it via SSH tunnel (`ssh -L 8787:localhost:8787 ...`), never expose it to the internet. On Oracle: do NOT add an ingress rule for 8787.
+- [ ] **Key-only SSH** — confirm password login is disabled (Oracle default). Optionally add fail2ban.
+- [ ] **Lock .env perms** — `chmod 600 .env` on the server so only the owner can read the keys.
+- [ ] **Set DASHBOARD_TOKEN** — random string, so even via tunnel the API requires auth.
+- [ ] **Keep deps patched** — periodic `docker compose pull` / rebuild.
+
+NOTE: Oracle "Shielded Instance" and "Confidential Computing" toggles do NOT address
+these threats (they're boot-firmware / RAM-encryption features). Leave them OFF.
+
+---
+
 ## 🐛 Bugs
 
 - [x] **docker-compose state never persists** — bot now reads `STATE_PATH` env; Dockerfile sets `STATE_PATH=/app/data/state_default.json`; docker-compose volume `./data:/app/data` maps correctly.
