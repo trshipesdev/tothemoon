@@ -47,6 +47,7 @@ End-to-end review + max-profit tuning. All shipped to the server in shadow mode.
 - [x] **`docker-compose.multi.yml`** — run all 4 modes side-by-side on the same live market (ports 8801-8804, Telegram off, AI off) + `scripts/compare-modes.sh`. Best on a ≥4GB box (1GB Oracle can't hold 4).
 
 ### Not done (honest scope — needs keys / real wallets)
+- [ ] **Per-chain wallet balance tracking** — CRITICAL before live trading. `per_chain_room()` currently caps by % of total vault, not actual wallet cash. In live mode the SOL wallet and EVM wallet have separate real balances. Bot needs `STATE["chain_balances"] = {"sol": X, "eth": Y, ...}` updated by `refresh_vault_balance()` (already fetches per-chain, just sums them). `per_chain_room()` must use `min(cap_pct * vault, chain_balance - chain_open_positions)` so it can never try to spend money that isn't in that wallet. Note: Base/ETH/BSC share one EVM wallet address so their balances are the same pool.
 - [ ] **Wallet rotation** for live trading (single wallet now — traceable/targetable). Needs real wallets, can't test in shadow.
 - [ ] **Jito bundles / private RPC** (anti-sandwich on Solana), gas-balance management, tx-failure retry. Live-only.
 - [ ] **More launch sources** (pump.fun, GeckoTerminal new-pools) for earlier detection. Need keys/integration.
