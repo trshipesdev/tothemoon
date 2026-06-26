@@ -53,6 +53,48 @@ End-to-end review + max-profit tuning. All shipped to the server in shadow mode.
 
 ---
 
+## 🔬 Reanalysis follow-ups — 2026-06-26 (overnight: net +$50, +5%)
+
+Bot owner wants NUANCE, not black-and-white blocks. Theme: **win off rugs by exiting
+seconds-before (not minutes-before); micro-sell to bleed them first.** Each item below
+is "make it smarter," not "add a hard gate."
+
+### Already shipped from the reanalysis
+- [x] **Phantom-position jam fixed** — closed shells counted against max-open, froze entries for hours.
+- [x] **Mode shown per trade** in History; **sortable columns + last-week/all window**.
+- [x] **Capital-at-risk metric** — peak $ on the table at once, starting bet, positions-at-once, "could've run this with ~$X".
+
+### HIGH priority — research/design then build
+- [ ] **Anti-rug exit ("bleed them first")** — micro-sell scale-out ladder + pre-rug tripwires (liq tick-down, single whale dump, sell-pressure flip, dev-wallet move). Goal: ride the pump, bail seconds before the dump, NOT minutes early. Intelligent on false positives (most shitcoins wobble). Applies to ALL modes.
+- [ ] **Pre-rug signal (item #8)** — was supposed to exist; high priority. Get out seconds/minute before, very intelligent on false positives.
+- [ ] **Faster stall/exit (item #2)** — current 10-min/6% never fired. Research micro-sell vs hard exit; how to bleed them before they bleed me.
+
+### Research first (does it help or hurt? quantify)
+- [ ] **hype vs degen vs all (item #3)** — owner's terminal tests (300 entries / 30 days) showed HYPE consistently wins; my 3-token sample was underpowered (degen won by catching one +206% runner). Need a LARGE-sample comparison (recording-based once data accumulates, or many historical tokens). Likely answer: degen=variance/runner-catching, hype=consistency → per-token mode (#68) is the real fix.
+- [ ] **PISSBOT smarter re-entry (item #4)** — do NOT block after any prior loss (incl. 80¢ losses). Research: block only after a HARD-exit loss, or net-negative beyond a threshold, on that symbol.
+- [ ] **MINE −$25.40 deep-dive (item #4-data)** — investigate exactly what happened tick-by-tick; what exit would've capped it.
+- [ ] **Hard dollar stop (item #5)** — research how much it would've helped/hurt vs the % stop before adding.
+- [ ] **Halve size on re-entries/thin (item #6)** — research how much upside it would've cost.
+- [ ] **first-N-minutes freshness (entry #18)** — research hurt/help.
+- [ ] **holder-growth signal (entry #20)** — research how much I'd miss out on.
+- [ ] **time-of-day weighting (entry #21-ish)** — research if it would've hurt.
+
+### Build with nuance (owner approved, wants smart not blunt)
+- [ ] **Moon-bag fine-tuning (item #11)** — study what would've ridden the +206% / 凪ちゃん runners to MAX. Tune trail tiers + when the wide leash kicks in. HIGH interest.
+- [ ] **Quick-scalp TP rung (item #7)** — add a low first rung; on ALL modes, smartest way.
+- [ ] **Per-symbol P&L memory (item #9)** — track but unblock if the coin genuinely rebounds enough "to restart the fun."
+- [ ] **Re-entry win-rate tracking (item #10)** — measure; smarter than a flat cap.
+- [ ] **Holder concentration / "one person holds everything" (entry #21/#26)** — owner wants to detect + still sometimes vigilante-trade the fraudy pumps. Surface it, don't always block.
+- [ ] **LP-lock / mint-renounced + dev-wallet rep (entry #22/#23)** — yes, but VERY intelligent on false positives.
+- [ ] **buy/sell ratio scored not gated (entry #16)** — explained; build.
+- [ ] **2-consecutive-rising-candles entry (entry #17)** — flesh out fully, fail-proof.
+- [ ] **degen more at-bats (item #10/#11-data)**, **velocity exit tick-to-tick (item #14)** — improve.
+
+### Lower / explain-and-defer
+- [ ] Reject-if-already-up-X% (entry #19), per-chain thresholds (#25), single-dominant-pool penalty (#26), volume-acceleration (#24) — explained; revisit. Owner: "I love rugs, want to outsmart them — don't just avoid, beat them."
+
+---
+
 ## 🔒 Go-live security hardening (DO BEFORE PUTTING REAL FUNDS ON THE SERVER)
 
 Currently shadow mode only — no wallet keys, no crypto anywhere, nothing to steal yet.
