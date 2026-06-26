@@ -4,6 +4,55 @@ Everything left to build, fix, or wire up. Roughly priority order within each se
 
 ---
 
+## 🚀 Strategy overhaul — 2026-06-26 (deployed, 373 passing tests)
+
+End-to-end review + max-profit tuning. All shipped to the server in shadow mode.
+
+### Entry quality
+- [x] **Momentum hype** — hype scores recent (h1) volume velocity, not a 24h average (`_pair_to_candidate`). Falls back to h24/24 when h1 missing.
+- [x] **Buyer/seller gate** — reject tokens being dumped (<45% of h1 trades are buys, `moonshot.buy_ratio_min`). Degrades gracefully when txn data absent.
+- [x] **Mode liquidity floor actually applied** — was a flat $15k regardless of mode; now uses the active mode's `liq_min` (degen $10k → more candidates, safe $50k → fewer/safer). This was a real bug.
+- [x] **Per-mode `max_age_min`** — safe accepts older/established, degen wants fresher (replaced dead `age_min` config).
+- [x] **Per-mode `max_entries_per_token_day`** — degen 6 / hype 4 / default 3 / safe 2 (was a flat global that strangled the bot once it cycled the few liquid tokens).
+
+### Exit / risk realism
+- [x] **Exit price impact** — `shadow_sell` now craters the fill when dumping a big bag into a thin pool (uncapped at the 5% entry ceiling). The moon-bag's +500% gains were fake-optimistic before this.
+- [x] **Mode-lock bug fix** — positions store `entry_mode` at buy; exits read the mode the position was ENTERED under, so an AI mode-switch can't retroactively change a held position's SL/TP.
+- [x] **Adaptive trailing stop** — tightens as unrealized gain grows (>+800% → 22%, >+300% → 28%, pre-ladder >+100% → 10%). A flat 45% trail gave back 45% of a +500% move.
+- [x] **Stall exit** — bank a position up ≥20% that stopped climbing for 10 min and slipped ≥6% off peak (the #1 leak: winners round-tripping to breakeven). Skips the moon bag. `CONFIG["stall_exit"]`, dashboard-tunable.
+
+### Capital / sizing
+- [x] **Conviction sizing** — ticket scales with setup quality (hype + buy pressure), bounded [0.8,1.5]× so it nudges without breaching caps (`_conviction_mult`).
+- [x] **Dynamic reserve** — hold back 40% (vs 25%) while the drawdown brake is on.
+- [x] **Max open positions** cap (12) — memecoins dump together; don't over-concentrate.
+- [x] **Manual blacklist** — never buy listed symbols/addresses (dashboard-editable).
+
+### AI auto-pilot
+- [x] **Faster cadence** — 30 → 12 min, AND event-triggered: consults immediately when the drawdown brake first trips.
+
+### Realism / data
+- [x] **Live Solana priority-fee gas** — `getRecentPrioritizationFees`-based estimate (fees spike during launch congestion). Falls back to static without a SOL_RPC_URL.
+
+### Observability
+- [x] **Per-mode P&L tracker** — `STATE["mode_perf"]` attributes realized P&L to the entry mode; dashboard "Realized P&L by mode" card.
+- [x] **Dashboard chart fix + zoom** — fixed the broken-when-hidden canvas; added scroll/drag/pinch zoom + reset button.
+- [x] **Strategy & risk Settings card** — stall exit, buyer/seller gate, max open, blacklist, all wired to `/api/config`.
+
+### Backtester (replay the past through the real strategy)
+- [x] **`src/bot/backtest.py`** — replays real historical price paths (GeckoTerminal OHLCV, free) through the LIVE entry/exit code under each mode. Reuses production functions via a simulated clock + mocked price feed. Shipped in the Docker image. Run: `docker compose exec cryptobot python backtest.py --days 3`.
+- [x] **Week-of-data sourcing from online scanners** — pull a broad token universe (GeckoTerminal trending + DexScreener boosts) so the backtest isn't limited to what the bot already traded; runs the whole week as a fast sim.
+- [ ] **Forward recorder** — snapshot the live trending feed + per-tick liquidity so backtests get real entry timing + rug/liq-drain modeling (closes the two backtester caveats: entry-at-window-start, constant-liquidity).
+
+### Multi-instance
+- [x] **`docker-compose.multi.yml`** — run all 4 modes side-by-side on the same live market (ports 8801-8804, Telegram off, AI off) + `scripts/compare-modes.sh`. Best on a ≥4GB box (1GB Oracle can't hold 4).
+
+### Not done (honest scope — needs keys / real wallets)
+- [ ] **Wallet rotation** for live trading (single wallet now — traceable/targetable). Needs real wallets, can't test in shadow.
+- [ ] **Jito bundles / private RPC** (anti-sandwich on Solana), gas-balance management, tx-failure retry. Live-only.
+- [ ] **More launch sources** (pump.fun, GeckoTerminal new-pools) for earlier detection. Need keys/integration.
+
+---
+
 ## 🔒 Go-live security hardening (DO BEFORE PUTTING REAL FUNDS ON THE SERVER)
 
 Currently shadow mode only — no wallet keys, no crypto anywhere, nothing to steal yet.
@@ -124,10 +173,10 @@ these threats (they're boot-firmware / RAM-encryption features). Leave them OFF.
 ## 🔵 Lower priority (cleanup / nice-to-have)
 
 ### Module split
-- [ ] `src/bot/config.py`, `data.py`, `exchange.py`, `indicators.py`, `portfolio.py`, `risk.py`, `strategy.py`, `altseason.py`, `main.py` — currently monolith; split when file gets unwieldy (currently 2115 lines).
+- [ ] `src/bot/config.py`, `data.py`, `exchange.py`, `indicators.py`, `portfolio.py`, `risk.py`, `strategy.py`, `altseason.py`, `main.py` — currently monolith; split when file gets unwieldy (currently ~3300 lines).
 
 ### Tests
-- [x] 68 unit tests in `src/bot/tests.py` — run with `python3 src/bot/tests.py -v`. Covers:
+- [x] 373 unit tests in `src/bot/tests.py` — run with `python3 src/bot/tests.py -v`. Covers:
   - `shadow_buy` / `shadow_sell` round-trip: weighted avg, vault balance, open_today_usd, trade_log
   - Capital sizing: reserve, per-chain cap, per-token cap, daily deploy cap, drawdown brake scaling
   - Drawdown brake activation and ticket-size reduction
