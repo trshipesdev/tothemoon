@@ -95,6 +95,93 @@ is "make it smarter," not "add a hard gate."
 
 ---
 
+## 🌱 Seed mode — dynamic sizing for small vaults (planned 2026-06-26)
+
+**Goal:** set `vault_usd = 100`, enable seed mode, and the bot manages itself — betting
+what it can afford, growing naturally, never running dry.
+
+### Architecture
+
+`cur_deployed_usd` is already live in `shadow_buy()` (line 1153). Seed mode reuses it
+to compute `avail_cash = vault_usd − cur_deployed_usd` at entry time.
+
+### Changes needed
+
+**Change 1 — Add `"seed"` to `CONFIG["modes"]` (after line 93)**
+```python
+"seed": {"tp": [0.50, 1.00], "sl": 0.14, "slip_bps": 120, "liq_min": 15000,
+         "max_age_min": 180, "max_entries_per_token_day": 3, "size_mult": 1.0},
+```
+Tighter SL (0.14) than degen (0.28) — a $100 vault can't absorb a $28 loss.
+
+**Change 2 — Add `"dynamic_sizing": False` flag to `CONFIG["moonshot"]` (after line 174)**
+```python
+"dynamic_sizing": False,  # True → bet_size = min(base_size_usd, avail_cash * 0.40)
+```
+`False` by default — existing configs unaffected. Flip to `True` for seed runs.
+
+**Change 3 — Extend `size_ticket_usd()` (lines 989–1004)**
+
+After the boost block and before the existing `min(base, per_chain_room...)` line, insert:
+```python
+if CONFIG["moonshot"].get("dynamic_sizing"):
+    avail_cash = max(0.0, STATE["vault_usd"] - STATE.get("cur_deployed_usd", 0.0))
+    base = min(base, avail_cash * 0.40)
+```
+
+**Change 4 — Entry guard: $10 floor + 1.5× buffer gate (lines 3393–3398)**
+
+Replace the `if usd >= CONFIG["moonshot"]["min_ticket_usd"]` check:
+```python
+_min_ticket = 10.0 if CONFIG["moonshot"].get("dynamic_sizing") else CONFIG["moonshot"]["min_ticket_usd"]
+if usd < _min_ticket:
+    _scout(symbol, chain, "rejected",
+           f"bet_size ${usd:.2f} below floor ${_min_ticket:.2f} (not enough cash)", sc, addr)
+    continue
+if CONFIG["moonshot"].get("dynamic_sizing"):
+    _avail = max(0.0, STATE["vault_usd"] - STATE.get("cur_deployed_usd", 0.0))
+    if _avail < usd * 1.5:
+        _scout(symbol, chain, "rejected",
+               f"cash buffer too thin (avail ${_avail:.2f} < 1.5x bet ${usd:.2f})", sc, addr)
+        continue
+```
+The 1.5× gate keeps at least one more minimum bet in reserve.
+
+**Change 5 — Verify `STATE` initialization seeds `"cur_deployed_usd": 0.0`**
+
+`size_ticket_usd` uses `.get("cur_deployed_usd", 0.0)` as a fallback, so safe either way,
+but check the `STATE = {` block (~line 250–350) and add the key if missing.
+
+### Expected behavior on $100 vault (reserve_pct = 0.25)
+
+| Open positions | Deployed | avail_cash | bet_size | Action |
+|---|---|---|---|---|
+| 0 | $0 | $100 | min($30, $40) = $30 | Enter |
+| 1 | $30 | $70 | min($30, $28) = $28 | Enter |
+| 2 | $58 | $42 | min($30, $16.80) = $16.80 | Enter |
+| 3 | $74 | $26 | $10.40, buffer check $10.40*1.5=$15.60 < $26 | Enter |
+| 4 | $84 | $16 | $6.40 < $10 floor | **Blocked** |
+
+Max ~4 concurrent positions; self-limiting, grows as wins compound.
+
+### How to activate
+```python
+CONFIG["mode"] = "seed"
+CONFIG["vault_usd"] = 100.0
+CONFIG["moonshot"]["dynamic_sizing"] = True
+CONFIG["moonshot"]["mode"] = "enter"
+```
+
+### Tasks
+- [ ] Change 1: add `"seed"` to `CONFIG["modes"]` (1 line after line 93)
+- [ ] Change 2: add `"dynamic_sizing": False` to `CONFIG["moonshot"]` (1 line after line 174)
+- [ ] Change 3: dynamic bet cap in `size_ticket_usd()` (lines 989–1004, ~3 new lines)
+- [ ] Change 4: $10 floor + 1.5× buffer gate in scanner entry loop (lines 3393–3398, ~10 lines)
+- [ ] Change 5: confirm `STATE` init has `"cur_deployed_usd": 0.0`
+- [ ] Add tests: seed mode bet sizing, floor enforcement, buffer gate, mode definition
+
+---
+
 ## 🔒 Go-live security hardening (DO BEFORE PUTTING REAL FUNDS ON THE SERVER)
 
 Currently shadow mode only — no wallet keys, no crypto anywhere, nothing to steal yet.
