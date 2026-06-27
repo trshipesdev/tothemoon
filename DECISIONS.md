@@ -54,7 +54,9 @@ The bot rarely fills all 12 slots — DexScreener doesn't surface 12 qualifying 
 ### base_size_usd = 30.0 (degen: ×1.6 = $48/bet) — calibrated
 Was $50, reduced to $30 to spread bets across more tokens.
 With $1000 vault: $48/bet = 4.8% per position. 12 slots = max $576 deployed = 57% of vault.
-Per-token cap at 12% of deployable keeps any single bet from exceeding ~$90.
+per_token_cap_room(symbol) subtracts existing position size — total per-token exposure capped at 12% of deployable.
+Was symbol-blind (flat 12% per bet regardless of existing position). TOPDOG 8×$70=$551, ? token 4×$67=$268,
+both blew past $90 because each individual buy was under the cap. Fixed 2026-06-27.
 
 ---
 
