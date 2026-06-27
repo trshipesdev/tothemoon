@@ -83,6 +83,25 @@ Tokens in 40-45% zone get 25% smaller bets via _conviction_mult penalty.
 
 ---
 
+---
+
+### EVM chains disabled — DO NOT re-enable without 50+ trade sample showing positive WR
+`CONFIG["chains"] = ["sol"]`
+Data from Jun 25-27: ETH 0% WR (-$84, all BOWIE), Base 25% WR (-$44), BSC 0% (-$10).
+SOL: 47% WR +$206. EVM chains bled -$138 total — structural, not noise.
+Re-enable only if a specific EVM chain shows ≥40% WR over 50+ trades with positive total PnL.
+
+### Profit re-entry: 60s minimum + 8% pullback — DO NOT remove the 60s gate
+TOPDOG re-bought 0 seconds after its own TP sell — chased its own exit price.
+60s hard floor prevents this regardless of pullback %. 8% pullback check still applies after.
+
+### Velocity 2-min internal check: 12% drop in 2min → exit — KEEP
+`velocity_2m_pct = 0.12`
+21 slow-bleed losses held 2-15 minutes losing $37. DexScreener m5 window too slow.
+Internal tick history (240 ticks ≈ 2min at 0.5s) exits faster before the dump compounds.
+
+---
+
 ## What "every revision helps ALL" means
 
 User instruction: each fix should improve behavior across ALL modes/vault sizes, not just the specific
