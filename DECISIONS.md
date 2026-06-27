@@ -73,6 +73,16 @@ both blew past $90 because each individual buy was under the cap. Fixed 2026-06-
 
 ---
 
+### buy_ratio_min: 0.40 (was 0.45) — DO NOT raise back without data
+FRONT (+511%) and MASTERCOIN (+656%) were both blocked by the 45% threshold.
+Both had buy_ratio=40% and 38%, hype=100, liq=$41k/$28k, age 87-91m / 26-79m.
+Tokens are suppressed at low buy_ratio while whales accumulate, then flipped.
+The filter was supposed to catch dump setups — but rugs are already capped by dollar_stop.
+Lowered to 0.40 on 2026-06-27 after scout log audit confirmed the misses.
+Tokens in 40-45% zone get 25% smaller bets via _conviction_mult penalty.
+
+---
+
 ## What "every revision helps ALL" means
 
 User instruction: each fix should improve behavior across ALL modes/vault sizes, not just the specific
